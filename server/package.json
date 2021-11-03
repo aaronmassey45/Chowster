@@ -24,7 +24,7 @@
     "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.9.1",
     "mongoose-unique-validator": "^2.0.3",
-    "validator": "^12.2.0"
+    "validator": "^13.7.0"
   },
   "devDependencies": {
     "@graphql-codegen/cli": "^1.12.2",
