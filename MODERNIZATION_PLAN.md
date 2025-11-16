@@ -13,7 +13,76 @@ This plan outlines a comprehensive modernization of Chowster, a full-stack JavaS
 
 **Timeline:** 3-4 weeks
 **Risk Level:** Medium (not production-critical)
-**Learning Opportunities:** TypeScript, Vite, Modern React patterns, Apollo v3, Latest GraphQL practices
+**Learning Opportunities:** TypeScript, Vite, React 19 + Compiler, TanStack Router, Apollo v3, Latest GraphQL practices
+
+---
+
+## Key Technology Highlights
+
+### React 19 - Game Changers
+
+**React Compiler (Auto-Optimization):**
+- No more manual `useMemo`, `useCallback`, or `React.memo`
+- Compiler automatically optimizes re-renders
+- Write simpler, more readable code
+- Better performance by default
+
+**New Hooks & Features:**
+- `use()` hook - Read promises and context directly in render
+- `ref` as prop - No more `forwardRef` wrapper needed
+- `useActionState()` - Better form handling with pending states
+- `useOptimistic()` - Optimistic UI updates built-in
+- Document metadata - Set `<title>` and `<meta>` in components
+
+**Example:**
+```typescript
+// Before (React 16):
+const MemoizedComponent = React.memo(({ data }) => {
+  const processedData = useMemo(() => expensiveOperation(data), [data]);
+  const handleClick = useCallback(() => doSomething(), []);
+  return <div onClick={handleClick}>{processedData}</div>;
+});
+
+// After (React 19 with Compiler):
+function Component({ data }) {
+  const processedData = expensiveOperation(data);  // Auto-memoized!
+  const handleClick = () => doSomething();  // Auto-memoized!
+  return <div onClick={handleClick}>{processedData}</div>;
+}
+```
+
+### TanStack Router - Type Safety Paradise
+
+**100% Type-Safe Routing:**
+- TypeScript knows every route in your app at compile time
+- Auto-completion for route paths, params, and search params
+- Impossible to navigate to non-existent routes (compile error!)
+- Type-safe data loading with loaders
+
+**Example:**
+```typescript
+// Navigate with full type safety
+navigate({
+  to: '/user/$userId',  // ✅ TypeScript knows this route exists
+  params: { userId: '123' },  // ✅ TypeScript enforces correct param type
+  search: { tab: 'posts' }  // ✅ TypeScript validates search params
+});
+
+// navigate({ to: '/fake-route' })  // ❌ Compile error!
+```
+
+**File-Based Routing:**
+- Routes defined by file structure (like Next.js)
+- Auto-generates route tree
+- Cleaner than manual route configuration
+- Easy to understand project structure
+
+**Built-in Features:**
+- Per-route data loading
+- Search param state management (with Zod validation!)
+- Automatic code splitting per route
+- Scroll restoration
+- Pending states for navigations
 
 ---
 
@@ -36,7 +105,7 @@ This plan outlines a comprehensive modernization of Chowster, a full-stack JavaS
 ### High-Risk Legacy Dependencies
 
 **Client:**
-- `react@16.12.0` → Latest: 18.3.1 (multiple security patches missed)
+- `react@16.12.0` → Latest: 19.2.0 (multiple security patches missed, missing React Compiler)
 - `jquery@3.3.1` → Should be removed entirely (XSS vulnerabilities in older versions)
 - `node-sass@4.13.1` → Deprecated, has native binary vulnerabilities
 - `@apollo/react-hooks@3.1.3` → Deprecated package
@@ -68,7 +137,7 @@ This plan outlines a comprehensive modernization of Chowster, a full-stack JavaS
 ```
 /Chowster
 ├── apps/
-│   ├── web/              # Vite + React 18 + TypeScript
+│   ├── web/              # Vite + React 19 + TypeScript + TanStack Router
 │   └── api/              # Node.js + Express + TypeScript
 ├── packages/
 │   ├── shared/           # Shared types, utils, constants
@@ -106,10 +175,10 @@ This plan outlines a comprehensive modernization of Chowster, a full-stack JavaS
 
 ### 1.3 Development Environment
 
-**DevContainer Setup:**
-- Docker compose with MongoDB, API, and Web
+**Local Setup:**
+- MongoDB running locally or using MongoDB Atlas (cloud)
 - Hot reload for both frontend and backend
-- Consistent environment across machines
+- Concurrent development with pnpm workspaces
 
 **Environment Variables:**
 - `.env.example` files with all required vars
@@ -122,7 +191,7 @@ This plan outlines a comprehensive modernization of Chowster, a full-stack JavaS
 - [ ] TypeScript configs for all packages
 - [ ] ESLint + Prettier setup
 - [ ] Git hooks configured
-- [ ] DevContainer (optional)
+- [ ] MongoDB setup (local or Atlas)
 
 ---
 
@@ -311,9 +380,9 @@ describe('AuthService', () => {
 
 **Core:**
 - **Vite 6.x** (replaces Create React App)
-- **React 18.x** with concurrent features
+- **React 19.2** with React Compiler (auto-memoization, no more useMemo/useCallback)
 - **TypeScript 5.7+**
-- **React Router v7** (or TanStack Router for type-safety)
+- **TanStack Router v1** (type-safe file-based routing)
 
 **GraphQL:**
 - **@apollo/client v3.x** (latest)
@@ -431,19 +500,32 @@ const { data } = useCurrentUserQuery();
 
 **Modern React Patterns:**
 
-**1. Hooks instead of Classes:**
+**1. React 19 Features:**
 ```typescript
-// Before: Class components
-class PostList extends React.Component { ... }
+// No more forwardRef!
+function Input({ ref, ...props }) {
+  return <input ref={ref} {...props} />;
+}
 
-// After: Functional components with hooks
+// use() hook for promises
+function UserProfile({ userPromise }) {
+  const user = use(userPromise);  // Suspends until ready
+  return <div>{user.name}</div>;
+}
+
+// React Compiler handles memoization automatically
+// No more manual useMemo/useCallback needed!
+```
+
+**2. Functional Components with Hooks:**
+```typescript
 const PostList: FC = () => {
   const { data, loading } = useGetFeedQuery();
-  // ...
+  // React Compiler auto-optimizes this!
 }
 ```
 
-**2. Server State with Apollo:**
+**3. Server State with Apollo:**
 ```typescript
 // Optimistic updates
 const [likePost] = useLikePostMutation({
@@ -456,7 +538,7 @@ const [likePost] = useLikePostMutation({
 });
 ```
 
-**3. Custom Hooks for Logic:**
+**4. Custom Hooks for Logic:**
 ```typescript
 // useAuth.ts
 export const useAuth = () => {
@@ -468,7 +550,7 @@ export const useAuth = () => {
 };
 ```
 
-**4. Compound Components:**
+**5. Compound Components:**
 ```typescript
 // Post component with sub-components
 <Post>
@@ -480,40 +562,58 @@ export const useAuth = () => {
 
 ### 3.5 Routing & Authentication
 
-**Modern Routing with React Router v7:**
+**Type-Safe Routing with TanStack Router:**
 ```typescript
-// router.tsx
-import { createBrowserRouter, redirect } from 'react-router-dom';
+// routes/index.tsx (file-based routing)
+import { createFileRoute } from '@tanstack/react-router';
 
-const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <RootLayout />,
-    children: [
-      {
-        index: true,
-        element: <LandingPage />
-      },
-      {
-        path: 'home',
-        element: <ProtectedRoute><HomePage /></ProtectedRoute>
-      }
-    ]
-  }
-]);
+export const Route = createFileRoute('/')({
+  component: LandingPage
+});
+
+// routes/home.tsx
+export const Route = createFileRoute('/home')({
+  beforeLoad: ({ context }) => {
+    if (!context.auth.isAuthenticated) {
+      throw redirect({ to: '/login' });
+    }
+  },
+  loader: async ({ context }) => {
+    // Type-safe data loading!
+    return await fetchUserFeed(context.auth.user.id);
+  },
+  component: HomePage
+});
 ```
 
-**Protected Routes with Loaders:**
+**Router Setup:**
 ```typescript
-// loader-based protection
-const protectedLoader = () => {
-  const { isAuthenticated } = getAuthState();
-  if (!isAuthenticated) {
-    return redirect('/login');
+// router.ts
+import { createRouter } from '@tanstack/react-router';
+import { routeTree } from './routeTree.gen';  // Auto-generated
+
+export const router = createRouter({
+  routeTree,
+  context: {
+    auth: undefined!,  // Set by provider
+  },
+});
+
+// Get TypeScript inference for all routes
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router;
   }
-  return null;
-};
+}
 ```
+
+**Benefits:**
+- **100% type-safe** navigation (TypeScript knows all routes)
+- **Auto-completion** for route paths and params
+- **File-based routing** like Next.js
+- **Built-in data loading** per route
+- **Search param validation** with Zod
+- **Compile-time route checking** (no broken links!)
 
 ### 3.6 UI Component Library
 
@@ -607,12 +707,12 @@ describe('LoginForm', () => {
 - Login → Create post → Like → Logout
 
 ### Deliverables:
-- [ ] Vite project setup with TypeScript
+- [ ] Vite project setup with React 19 + TypeScript
 - [ ] Apollo Client v3 with codegen
 - [ ] All pages migrated to TypeScript
 - [ ] Tailwind CSS configured
 - [ ] shadcn/ui components installed
-- [ ] React Router v7 setup
+- [ ] TanStack Router with file-based routing
 - [ ] Authentication flow with cookies
 - [ ] Forms with React Hook Form + Zod
 - [ ] Unit tests for key components
@@ -722,6 +822,11 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:8
+        ports:
+          - 27017:27017
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v2
@@ -737,48 +842,19 @@ jobs:
       - run: pnpm build
 ```
 
-### 4.5 Docker & Deployment
+### 4.5 Deployment Options
 
-**Multi-stage Dockerfile:**
-```dockerfile
-# Build stage
-FROM node:22-alpine AS builder
-WORKDIR /app
-COPY package*.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --frozen-lockfile
-COPY . .
-RUN pnpm build
+**Platform Options:**
+- **Vercel** (easiest) - Deploy frontend, API as serverless functions
+- **Railway** - Full-stack with MongoDB included
+- **Render** - Free tier for both frontend and backend
+- **Fly.io** - Global edge deployment
+- **Heroku** - Classic choice (paid)
 
-# Production stage
-FROM node:22-alpine
-WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-CMD ["node", "dist/index.js"]
-```
-
-**Docker Compose for Development:**
-```yaml
-services:
-  mongodb:
-    image: mongo:8
-    ports:
-      - "27017:27017"
-
-  api:
-    build: ./apps/api
-    ports:
-      - "3001:3001"
-    depends_on:
-      - mongodb
-
-  web:
-    build: ./apps/web
-    ports:
-      - "5173:5173"
-    depends_on:
-      - api
-```
+**MongoDB Hosting:**
+- **MongoDB Atlas** (recommended) - Free tier available
+- **Railway MongoDB** - Included with Railway deployment
+- **Render MongoDB** - Included with Render deployment
 
 ### Deliverables:
 - [ ] Shared types package
@@ -786,8 +862,8 @@ services:
 - [ ] Type-safe env configuration
 - [ ] Monorepo scripts configured
 - [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Docker setup for development
-- [ ] Production deployment config
+- [ ] Deployment platform selected
+- [ ] MongoDB hosting configured
 
 ---
 
@@ -881,7 +957,8 @@ services:
 | Category | Old Stack | New Stack | Reason for Change |
 |----------|-----------|-----------|-------------------|
 | **Frontend Build** | Create React App | Vite | 10x faster HMR, better DX |
-| **React Version** | 16.12 | 18.3 | Concurrent features, hooks updates |
+| **React Version** | 16.12 | 19.2 | React Compiler, use() hook, ref as prop |
+| **Routing** | React Router v5 | TanStack Router | Type-safe routes, file-based routing |
 | **Styling** | Bootstrap + SCSS | Tailwind + shadcn/ui | Utility-first, smaller bundle |
 | **GraphQL Client** | Apollo v2 + apollo-boost | @apollo/client v3 | Modern API, better types |
 | **Forms** | Controlled components | React Hook Form + Zod | Performance, validation |
@@ -1014,9 +1091,11 @@ pnpm init
 # Setup workspaces
 mkdir -p apps/web apps/api packages/shared
 
-# Install Vite + React (web)
+# Install Vite + React 19 (web)
 cd apps/web
 pnpm create vite . --template react-swc-ts
+pnpm add react@19.2.0 react-dom@19.2.0
+pnpm add -D @tanstack/router-cli @tanstack/router-plugin
 
 # Install TypeScript backend (api)
 cd apps/api
